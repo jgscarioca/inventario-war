@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Inventário War - Grid Expandível & Fusão (Merge)</title>
+  <meta name="description" content="Jogo de gerenciamento de inventário e fusão de itens estilo Backpack Brawl. Combine armas idênticas no grid 12x12 para subir de nível e derrotar monstros!">
+  
+  <!-- Google Fonts: Outfit & Luckiest Guy for juicy game aesthetics -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Outfit:wght@400;600;700;800;900&family=Russo+One&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-app">
+    <!-- Top Bar: Game Stats & Currency -->
+    <header class="game-header">
+      <div class="brand">
+        <span class="game-title">INVENTÁRIO <span class="highlight-text">WAR</span></span>
+        <span class="badge-version">v1.2 • MERGE SYSTEM</span>
+      </div>
+
+      <div class="top-stats-row">
+        <div class="stat-pill gold-pill gold-highlight" id="gold-pill-container" title="Ouro para comprar equipamentos e expandir o grid">
+          <span class="pill-icon gold-coin-icon">🪙</span>
+          <span id="gold-display" class="pill-value gold-value-highlight">150</span>
+          <span class="pill-label">Ouro</span>
+          <span id="gold-delta-bubble" class="gold-delta-bubble"></span>
+        </div>
+        
+        <div class="stat-pill power-pill" title="Poder Total do Inventário & DPS em Tempo Real">
+          <span class="pill-icon">⚔️</span>
+          <div class="pill-stat-group">
+            <span id="total-power-display" class="pill-value power-glow">340</span>
+            <span id="total-dps-sub" class="pill-sub-dps">340 DPS</span>
+          </div>
+          <span class="pill-label">Poder (DPS)</span>
+        </div>
+
+        <div class="header-actions">
+          <button id="btn-audio-toggle" class="btn-icon" title="Ativar/Desativar Som" aria-label="Som">
+            🔊
+          </button>
+          <button id="btn-fullscreen-toggle" class="btn-icon" title="Ajuda / Informações" aria-label="Ajuda">
+            ℹ️
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area: Split View (Mobile layout stacked, Desktop side-by-side or stacked top/bottom) -->
+    <main class="game-container">
+      
+      <!-- Top Arena / Combat Battlefield Preview (Inspired by screenshot) -->
+      <section class="battle-section" aria-label="Arena de Batalha">
+        <div class="battle-header">
+          <div class="wave-tag">
+            <span class="wave-icon">💀</span>
+            <span id="wave-counter">Onda 1 - Deserto dos Ogros</span>
+          </div>
+          <div class="battle-speed-toggle">
+            <button id="btn-speed-toggle" class="btn-chip" title="Velocidade da Batalha">1x ⏩</button>
+          </div>
+        </div>
+
+        <!-- Canvas for dynamic hero & monster battle -->
+        <div class="battle-canvas-container">
+          <canvas id="battle-canvas" width="600" height="200"></canvas>
+          <div id="floating-damage-layer" class="floating-damage-layer"></div>
+        </div>
+
+        <!-- Power Comparison & Merge Guide Banner (from screenshot: 568 ➔ 1582) -->
+        <div class="merge-hint-banner">
+          <div class="power-upgrade-box">
+            <div class="power-badge current">
+              <span class="badge-sub">PODER (DPS)</span>
+              <span class="badge-num" id="banner-current-power">340</span>
+            </div>
+            <div class="upgrade-arrow">➔</div>
+            <div class="power-badge next">
+              <span class="badge-sub">PRÓX. FUSÃO</span>
+              <span class="badge-num" id="banner-next-power">640</span>
+            </div>
+          </div>
+
+          <div class="recipe-preview" id="recipe-preview-box">
+            <div class="recipe-item" id="recipe-item-a">
+              <div class="recipe-icon">🪓</div>
+              <span>Machado Nv.1</span>
+            </div>
+            <span class="recipe-op">+</span>
+            <div class="recipe-item" id="recipe-item-b">
+              <div class="recipe-icon">🪓</div>
+              <span>Machado Nv.1</span>
+            </div>
+            <span class="recipe-op">➔</span>
+            <div class="recipe-item result" id="recipe-item-res">
+              <div class="recipe-icon glow-pulse">🪓</div>
+              <span class="result-text">Machado de Guerra Nv.2 (1x2)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Grid & Inventory Controls Section -->
+      <section class="inventory-section" aria-label="Mochila e Grid 12x12">
+        <div class="inventory-toolbar">
+          <div class="inventory-title-group">
+            <div class="inventory-title-row">
+              <h1 class="inventory-title">Mochila Tática (Grid 12x12)</h1>
+              <div class="live-dps-badge" title="Dano Por Segundo Total em tempo real">
+                <span class="dps-badge-icon">⚡</span>
+                <span class="dps-badge-label">PODER TOTAL:</span>
+                <span id="live-dps-display" class="dps-badge-val">340</span>
+                <span class="dps-badge-unit">DPS</span>
+              </div>
+            </div>
+            <span class="inventory-subtitle">Arraste itens idênticos do mesmo nível para fundir!</span>
+          </div>
+
+          <div class="inventory-actions">
+            <!-- Grid Expansion Controls -->
+            <button id="btn-expand-grid" class="btn-action btn-expand" title="Desbloquear mais células com moedas">
+              <span class="btn-icon">📐</span>
+              <span class="btn-text">Expandir Grid (<span id="expand-cost">50</span> 🪙)</span>
+            </button>
+            <button id="btn-unlock-all" class="btn-action btn-secondary" title="Alternar desbloqueio total de todas as 144 células do grid 12x12">
+              <span class="btn-icon">🔓</span>
+              <span class="btn-text" id="unlock-all-text">Grid 12x12 Total</span>
+            </button>
+            <button id="btn-rotate-item" class="btn-action btn-rotate" title="Girar item segurado (Tecla R)">
+              <span class="btn-icon">🔄</span>
+              <span class="btn-text">Girar (R)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 12x12 Interactive Backpack Grid Container -->
+        <div class="grid-wrapper">
+          <div class="grid-coordinate-ruler top-ruler" id="col-ruler"></div>
+          <div class="grid-middle-row">
+            <div class="grid-coordinate-ruler side-ruler" id="row-ruler"></div>
+            
+            <div id="backpack-grid" class="backpack-grid" data-cols="12" data-rows="12">
+              <!-- 144 cells injected via JS -->
+            </div>
+          </div>
+
+          <!-- Drag Floating Ghost Item -->
+          <div id="drag-ghost" class="drag-ghost hidden"></div>
+          
+          <!-- Drop Indicator Overlay -->
+          <div id="grid-drop-indicator" class="grid-drop-indicator hidden"></div>
+        </div>
+
+        <!-- Bottom Stash / Item Chest Spawner -->
+        <div class="stash-container">
+          <div class="stash-header">
+            <div class="stash-title-group">
+              <div class="stash-title">
+                <span>🎁 Baú de Suprimentos & Reserva</span>
+                <span class="stash-hint">(Arraste itens daqui para o grid)</span>
+              </div>
+              <!-- Indicador Visual na Loja/Baú: Nível do baú e custo do próximo drop -->
+              <div class="chest-shop-badge" id="chest-shop-indicator" title="Status do Baú: Nível e Custo do Próximo Equipamento">
+                <span class="chest-tier-tag">
+                  <span class="badge-icon">⭐</span>
+                  <span>Baú Nv. <strong id="chest-level-display">1</strong></span>
+                </span>
+                <span class="chest-cost-badge">
+                  <span class="drop-label">Próximo drop:</span>
+                  <span class="drop-cost-val"><strong id="next-drop-cost">50</strong> 🪙</span>
+                </span>
+              </div>
+            </div>
+            <div class="chest-button-group">
+              <button id="btn-spawn-item" class="btn-chest" title="Abrir equipamento por 50 🪙">
+                <span class="chest-anim">📦</span>
+                <span class="chest-btn-label">Abrir Equipamento</span>
+                <span class="chest-cost-pill"><span id="chest-cost-display">50</span> 🪙</span>
+              </button>
+              <button id="btn-clear-bag" class="btn-action btn-danger" title="Limpar inventário">
+                <span>🗑️</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Stash Slots (Hold temporary items before putting into backpack) -->
+          <div id="stash-slots" class="stash-slots">
+            <!-- Stash items injected here -->
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- Floating Item Detail Tooltip -->
+    <div id="item-tooltip" class="item-tooltip hidden">
+      <div class="tooltip-header">
+        <span id="tooltip-icon" class="tooltip-icon"></span>
+        <div class="tooltip-names">
+          <div id="tooltip-title" class="tooltip-title">Machado de Guerra</div>
+          <div id="tooltip-tier" class="tooltip-tier">Raro • Nível 2</div>
+        </div>
+      </div>
+      <div class="tooltip-body">
+        <div class="tooltip-stat-row">
+          <span>⚔️ Dano / Poder:</span>
+          <strong id="tooltip-power">+45</strong>
+        </div>
+        <div class="tooltip-stat-row hidden" id="tooltip-synergy-row">
+          <span id="tooltip-synergy-label">⚡ Bônus Adjacência:</span>
+          <strong id="tooltip-synergy-val" class="highlight-synergy">+0 DPS</strong>
+        </div>
+        <div class="tooltip-stat-row">
+          <span>📐 Dimensão:</span>
+          <strong id="tooltip-size">1x2 células</strong>
+        </div>
+        <div class="tooltip-stat-row">
+          <span>⚡ Próxima Fusão:</span>
+          <strong id="tooltip-bonus" class="highlight-text">+100% de Atributo</strong>
+        </div>
+        <div class="tooltip-desc" id="tooltip-desc">
+          Combine com outro item idêntico Nv.2 para forjar o nível 3!
+        </div>
+      </div>
+    </div>
+
+    <!-- Merge Celebration FX Overlay -->
+    <div id="merge-banner-fx" class="merge-banner-fx hidden">
+      <div class="fx-burst"></div>
+      <div class="fx-text-wrap">
+        <span class="fx-sparkle">✨ FUSÃO CONCLUÍDA! ✨</span>
+        <h2 id="fx-item-name" class="fx-item-name">Machado Berserker</h2>
+        <span id="fx-item-stats" class="fx-item-stats">Nível 3 • 2x2 Células • Poder +120!</span>
+      </div>
+    </div>
+
+    <!-- Instructions / Help Modal -->
+    <div id="help-modal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Como Jogar & Regras do Merge</h2>
+          <button id="btn-close-modal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="guide-step">
+            <span class="step-num">1</span>
+            <div>
+              <strong>Arraste e Solte:</strong> Arraste itens pelo grid 12x12 ou a partir do baú.
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">2</span>
+            <div>
+              <strong>Fusão Idêntica (Merge):</strong> Arraste um item sobre outro <em>idêntico e do mesmo nível</em> para fundir!
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">3</span>
+            <div>
+              <strong>Evolução de Tamanho & Poder:</strong> Cada fusão aumenta o nível (+1), amplifica o poder, muda o ícone/cor da raridade e altera o tamanho geométrico (ex: 1x1 ➔ 1x2 ➔ 2x2 ➔ 2x3).
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">4</span>
+            <div>
+              <strong>Expansão do Grid:</strong> Comece com uma área central desbloqueada e gaste moedas de ouro obtidas derrotando monstros para expandir a mochila até 12x12!
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-modal-got-it" class="btn-primary">Entendido, vamos batalhar!</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Mobile Floating Gear Merge Ribbon (as shown in user banner) -->
+    <footer class="game-footer">
+      <div class="footer-ribbon">
+        <span class="ribbon-text">GEAR MERGE</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/sound.js"></script>
+  <script src="js/itemsData.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/dragDrop.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
