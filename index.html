@@ -155,41 +155,57 @@
           <div id="grid-drop-indicator" class="grid-drop-indicator hidden"></div>
         </div>
 
-        <!-- Bottom Stash / Item Chest Spawner -->
-        <div class="stash-container">
-          <div class="stash-header">
-            <div class="stash-title-group">
-              <div class="stash-title">
-                <span>🎁 Baú de Suprimentos & Reserva</span>
-                <span class="stash-hint">(Arraste itens daqui para o grid)</span>
+        <!-- Bottom Tactical Shop & Stash Reserve Section -->
+        <div class="shop-container">
+          <!-- Shop Header: Title, Wave Badge, and Action Controls -->
+          <div class="shop-header">
+            <div class="shop-title-group">
+              <div class="shop-title">
+                <span class="shop-icon">🛒</span>
+                <span class="shop-title-text">Mercado Tático de Armas</span>
+                <span class="shop-wave-tag" id="shop-wave-badge">Onda 1</span>
               </div>
-              <!-- Indicador Visual na Loja/Baú: Nível do baú e custo do próximo drop -->
-              <div class="chest-shop-badge" id="chest-shop-indicator" title="Status do Baú: Nível e Custo do Próximo Equipamento">
-                <span class="chest-tier-tag">
-                  <span class="badge-icon">⭐</span>
-                  <span>Baú Nv. <strong id="chest-level-display">1</strong></span>
-                </span>
-                <span class="chest-cost-badge">
-                  <span class="drop-label">Próximo drop:</span>
-                  <span class="drop-cost-val"><strong id="next-drop-cost">50</strong> 🪙</span>
-                </span>
-              </div>
+              <span class="shop-subtitle">Compre armas para fundir ou congele (❄️) opções para a próxima rodada!</span>
             </div>
-            <div class="chest-button-group">
-              <button id="btn-spawn-item" class="btn-chest" title="Abrir equipamento por 50 🪙">
+
+            <div class="shop-controls">
+              <!-- Reroll Button (2 Gold) -->
+              <button id="btn-reroll-shop" class="btn-reroll" title="Atualizar itens da loja (Custo: 2 🪙)">
+                <span class="reroll-icon">🎲</span>
+                <span>Reroll</span>
+                <span class="reroll-cost-pill"><strong id="reroll-cost-display">2</strong> 🪙</span>
+              </button>
+              
+              <!-- Quick Chest Spawn (50 Gold) -->
+              <button id="btn-spawn-item" class="btn-chest btn-quick-chest" title="Abrir equipamento surpresa por 50 🪙">
                 <span class="chest-anim">📦</span>
-                <span class="chest-btn-label">Abrir Equipamento</span>
+                <span class="chest-btn-label">Drop Rápido</span>
                 <span class="chest-cost-pill"><span id="chest-cost-display">50</span> 🪙</span>
               </button>
-              <button id="btn-clear-bag" class="btn-action btn-danger" title="Limpar inventário">
+
+              <button id="btn-clear-bag" class="btn-action btn-danger" title="Limpar itens da mochila para a reserva">
                 <span>🗑️</span>
               </button>
             </div>
           </div>
 
+          <!-- 4-Slot Shop Shelf (Cards populated dynamically via JS) -->
+          <div class="shop-shelf" id="shop-shelf">
+            <!-- 4 shop cards injected via JS -->
+          </div>
+
           <!-- Stash Slots (Hold temporary items before putting into backpack) -->
-          <div id="stash-slots" class="stash-slots">
-            <!-- Stash items injected here -->
+          <div class="stash-sub-section">
+            <div class="stash-header-sub">
+              <div class="stash-sub-title">
+                <span>🎒 Baú de Reserva</span>
+                <span class="stash-hint">(Arraste itens daqui para o grid 12x12)</span>
+              </div>
+              <span class="stash-slots-counter" id="stash-count-text">2 / 8 ocupados</span>
+            </div>
+            <div id="stash-slots" class="stash-slots">
+              <!-- Stash items injected here -->
+            </div>
           </div>
         </div>
 
@@ -267,7 +283,19 @@
           <div class="guide-step">
             <span class="step-num">4</span>
             <div>
-              <strong>Expansão do Grid:</strong> Comece com uma área central desbloqueada e gaste moedas de ouro obtidas derrotando monstros para expandir a mochila até 12x12!
+              <strong>Expansão do Grid:</strong> Comece com a área central e gaste moedas de ouro ganhas na batalha para expandir a mochila até 12x12!
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">5</span>
+            <div>
+              <strong>Mercado Tático & Reroll:</strong> A cada onda a loja se renova com 4 ofertas! Gaste 2 🪙 para dar <em>Reroll</em> e congele (❄️) itens preciosos para a próxima rodada.
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">6</span>
+            <div>
+              <strong>Sinergias de Adjacência:</strong> Posicione Grimoires ao lado de Lâminas para <em>Dano de Fogo 🔥</em>, Pedras Amoladoras para <em>DPS Crítico ⚡</em>, Poções para <em>Cura Ativa 🧪</em> e Escudos para <em>Barreiras 🛡️</em>!
             </div>
           </div>
         </div>

@@ -443,12 +443,40 @@ class DragDropController {
     const t = this.tooltipEl;
     if (!t) return;
 
-    const tierLabels = ['Comum', 'Raro', 'Épico', 'Lendário', 'Mítico'];
+    const catLabels = {
+      blade: '⚔️ Lâmina',
+      magic: '🔮 Magia',
+      armor: '🛡️ Armadura',
+      potion: '🧪 Poção',
+      accessory: '⚙️ Acessório',
+      ranged: '🏹 Distância'
+    };
+    const catName = catLabels[item.category] || 'Equipamento';
     document.getElementById('tooltip-title').textContent = item.name;
-    document.getElementById('tooltip-tier').textContent = `${tierLabels[item.tier - 1]} • Nível ${item.level}`;
-    document.getElementById('tooltip-power').textContent = `+${item.power}`;
+    document.getElementById('tooltip-tier').textContent = `${catName} • ${tierLabels[item.tier - 1]} • Nv. ${item.level}`;
+    document.getElementById('tooltip-power').textContent = `+${item.power + (item.adjacencyBonusPower || 0)}`;
     document.getElementById('tooltip-size').textContent = `${item.width}x${item.height} células`;
     document.getElementById('tooltip-desc').textContent = item.desc;
+
+    // Sinergia Adjacente
+    const synergyRow = document.getElementById('tooltip-synergy-row');
+    const synergyLabel = document.getElementById('tooltip-synergy-label');
+    const synergyVal = document.getElementById('tooltip-synergy-val');
+    if (item.buffedBy && item.buffedBy.length > 0) {
+      synergyRow?.classList.remove('hidden');
+      if (synergyLabel) synergyLabel.textContent = '✨ Sinergias Ativas:';
+      if (synergyVal) {
+        synergyVal.innerHTML = item.buffedBy.map(b => `${b.icon || '⚡'} ${b.name}: +${b.bonus} (${b.label || ''})`).join('<br>');
+      }
+    } else if (item.buffingItems && item.buffingItems.length > 0) {
+      synergyRow?.classList.remove('hidden');
+      if (synergyLabel) synergyLabel.textContent = '⚡ Fornecendo Bônus:';
+      if (synergyVal) {
+        synergyVal.innerHTML = item.buffingItems.map(b => `➔ ${b.name}: +${b.bonus} DPS`).join('<br>');
+      }
+    } else {
+      synergyRow?.classList.add('hidden');
+    }
 
     const nextTier = getNextTier(item.type, item.level);
     if (nextTier) {

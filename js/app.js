@@ -64,6 +64,200 @@ class StashManager {
 
       this.container.appendChild(slotEl);
     }
+
+    const countEl = document.getElementById('stash-count-text');
+    if (countEl) {
+      countEl.textContent = `${this.items.length} / ${this.maxSlots} ocupados`;
+    }
+  }
+}
+
+// ==========================================================================
+// TACTICAL SHOP & ROUND CYCLE MANAGER (Auto-Chess / Backpack Battles Style)
+// ==========================================================================
+class ShopManager {
+  constructor(maxOffers = 4) {
+    this.maxOffers = maxOffers;
+    this.rerollCost = 2;
+    this.offers = []; // array of { id, item, price, isFrozen, isSold }
+    this.shelfEl = document.getElementById('shop-shelf');
+    this.waveBadgeEl = document.getElementById('shop-wave-badge');
+    this.rerollCostEl = document.getElementById('reroll-cost-display');
+
+    this.availableTypes = ['axe', 'sword', 'spellbook', 'whetstone', 'shield', 'helmet', 'potion', 'bow'];
+  }
+
+  init() {
+    this.refreshShop(true);
+  }
+
+  // Generate 4 offers (respecting frozen status)
+  refreshShop(forceAll = false) {
+    const newOffers = [];
+    for (let i = 0; i < this.maxOffers; i++) {
+      const prevOffer = this.offers[i];
+      if (!forceAll && prevOffer && prevOffer.isFrozen && !prevOffer.isSold) {
+        newOffers.push(prevOffer);
+      } else {
+        const type = this.availableTypes[Math.floor(Math.random() * this.availableTypes.length)];
+        const item = createItem(type, 1);
+        newOffers.push({
+          id: `offer_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
+          item: item,
+          price: item.shopPrice || 35,
+          isFrozen: false,
+          isSold: false
+        });
+      }
+    }
+    this.offers = newOffers;
+    this.renderShelf();
+  }
+
+  // Reroll action
+  reroll() {
+    if (window.appState.gold < this.rerollCost) {
+      window.appState.triggerGoldShortage();
+      const btn = document.getElementById('btn-reroll-shop');
+      btn?.classList.add('btn-shake');
+      setTimeout(() => btn?.classList.remove('btn-shake'), 400);
+      alert(`Você precisa de ${this.rerollCost} moedas de ouro para atualizar a loja!`);
+      return false;
+    }
+
+    const paid = window.appState.spendGold(this.rerollCost);
+    if (!paid) return false;
+
+    window.sound?.playDrop();
+    this.refreshShop(false);
+    return true;
+  }
+
+  // Toggle freeze on an offer
+  toggleFreeze(offerIndex) {
+    const offer = this.offers[offerIndex];
+    if (!offer || offer.isSold) return;
+
+    offer.isFrozen = !offer.isFrozen;
+    window.sound?.playTone(offer.isFrozen ? 880 : 440, 'triangle', 0.1);
+    this.renderShelf();
+  }
+
+  // Buy offer
+  buyItem(offerIndex) {
+    const offer = this.offers[offerIndex];
+    if (!offer || offer.isSold) return;
+
+    if (window.stashManager.isFull()) {
+      window.sound?.playError();
+      alert('O Baú de Reserva está lotado! Libere espaço antes de comprar.');
+      return;
+    }
+
+    if (window.appState.gold < offer.price) {
+      window.appState.triggerGoldShortage();
+      alert(`Você precisa de ${offer.price} moedas de ouro para comprar este item!`);
+      return;
+    }
+
+    const paid = window.appState.spendGold(offer.price);
+    if (!paid) return;
+
+    // Add to stash
+    window.stashManager.addItem(offer.item);
+    offer.isSold = true;
+    offer.isFrozen = false;
+
+    window.sound?.playChest();
+    window.sound?.playCoin();
+
+    this.renderShelf();
+    window.appState.updateCombatAndStats();
+  }
+
+  // Hook for round / wave progress
+  onNewWave(wave) {
+    if (this.waveBadgeEl) {
+      this.waveBadgeEl.textContent = `Onda ${wave}`;
+    }
+    // Refresh shop keeping frozen items
+    this.refreshShop(false);
+  }
+
+  renderShelf() {
+    if (!this.shelfEl) return;
+    this.shelfEl.innerHTML = '';
+
+    const categoryIcons = {
+      blade: '⚔️ Lâmina',
+      magic: '🔮 Magia',
+      armor: '🛡️ Armadura',
+      potion: '🧪 Poção',
+      accessory: '⚙️ Acessório',
+      ranged: '🏹 Distância'
+    };
+
+    this.offers.forEach((offer, idx) => {
+      const card = document.createElement('div');
+      card.className = `shop-card ${offer.isFrozen ? 'is-frozen' : ''} ${offer.isSold ? 'is-sold' : ''}`;
+
+      if (offer.isSold) {
+        card.innerHTML = `
+          <div class="sold-overlay">
+            <span class="sold-icon">✅</span>
+            <span class="sold-text">COMPRADO</span>
+          </div>
+        `;
+      } else {
+        const item = offer.item;
+        const catLabel = categoryIcons[item.category] || '⚔️ Equipamento';
+
+        let statSummary = `⚔️+${item.power} DPS`;
+        if (item.category === 'magic') statSummary = `🔥+${item.buffPercent}% Fogo`;
+        if (item.category === 'accessory') statSummary = `⚡+${item.buffPercent}% Afiar`;
+        if (item.category === 'armor') statSummary = `🛡️+${item.power} Defesa`;
+        if (item.category === 'potion') statSummary = `🧪 Cura +${item.buffPercent}%`;
+
+        card.innerHTML = `
+          <div class="shop-card-header">
+            <span class="shop-card-category cat-${item.category}">${catLabel}</span>
+            <button class="btn-freeze-card ${offer.isFrozen ? 'frozen-active' : ''}" title="${offer.isFrozen ? 'Descongelar item' : 'Congelar item para a próxima rodada'}">
+              ${offer.isFrozen ? '❄️ Preso' : '❄️'}
+            </button>
+          </div>
+
+          <div class="shop-card-icon-wrap tier-${item.tier}">
+            ${item.svgString}
+            <span class="shop-card-lvl">Nv.${item.level}</span>
+          </div>
+
+          <div class="shop-card-info">
+            <div class="shop-card-name" title="${item.name}">${item.name}</div>
+            <div class="shop-card-stat">${statSummary}</div>
+          </div>
+
+          <button class="btn-buy-card" ${window.appState?.gold < offer.price ? 'disabled' : ''}>
+            <span>Comprar</span>
+            <span class="shop-price-tag"><strong>${offer.price}</strong> 🪙</span>
+          </button>
+        `;
+
+        // Event listeners
+        const freezeBtn = card.querySelector('.btn-freeze-card');
+        freezeBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleFreeze(idx);
+        });
+
+        const buyBtn = card.querySelector('.btn-buy-card');
+        buyBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.buyItem(idx);
+        });
+      }
+
+      this.shelfEl.appendChild(card);
+    });
   }
 }
 
@@ -163,6 +357,23 @@ class AppState {
     if (this.chestBtn) {
       this.chestBtn.disabled = this.gold < this.chestCost;
     }
+
+    // Update shop reroll and buy buttons disabled state
+    const rerollBtn = document.getElementById('btn-reroll-shop');
+    if (rerollBtn && window.shopManager) {
+      rerollBtn.disabled = this.gold < window.shopManager.rerollCost;
+    }
+
+    if (window.shopManager?.shelfEl) {
+      const cards = window.shopManager.shelfEl.querySelectorAll('.shop-card:not(.is-sold)');
+      cards.forEach((card, idx) => {
+        const offer = window.shopManager.offers[idx];
+        const buyBtn = card.querySelector('.btn-buy-card');
+        if (buyBtn && offer) {
+          buyBtn.disabled = this.gold < offer.price;
+        }
+      });
+    }
   }
 
   // Smooth number interpolation animation for real-time feel
@@ -231,20 +442,24 @@ document.addEventListener('DOMContentLoaded', () => {
   window.backpackGrid = new BackpackGrid(12, 12);
   window.backpackGrid.buildDOM();
 
-  // 2. Initialize Stash and Drag & Drop
+  // 2. Initialize Stash, Shop, and Drag & Drop
   window.stashManager = new StashManager(8);
+  window.shopManager = new ShopManager(4);
+  window.shopManager.init();
   window.dragDropController = new DragDropController(window.backpackGrid);
 
   // 3. Initialize Top Battle Arena
   window.combatArena = new CombatArena('battle-canvas');
 
-  // 4. Initial Items (Pre-populate with 2 identical Lv.1 Axes ready for merge!)
+  // 4. Initial Items: Weapons + Magic Book + Whetstone to demo fire & sharpening synergies!
   const axe1 = createItem('axe', 1);
   const axe2 = createItem('axe', 1);
   const dagger1 = createItem('sword', 1);
   const dagger2 = createItem('sword', 1);
   const potion = createItem('potion', 1);
   const shield = createItem('shield', 1);
+  const spellbook = createItem('spellbook', 1);
+  const whetstone = createItem('whetstone', 1);
 
   // Place items in grid:
   // axe1 at (4, 4) and axe2 at (4, 6) in the center of the unlocked 6x6 area
@@ -256,12 +471,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Place in stash:
   window.stashManager.addItem(dagger2);
   window.stashManager.addItem(shield);
+  window.stashManager.addItem(spellbook);
+  window.stashManager.addItem(whetstone);
 
   // Preview initial recipe in the merge hint banner
   window.dragDropController.previewItemInBanner(axe1);
 
   // Initial stats calculation
   window.appState.updateCombatAndStats();
+
+  // Shop Reroll Button
+  document.getElementById('btn-reroll-shop')?.addEventListener('click', () => {
+    window.shopManager.reroll();
+  });
 
   // 5. Button Event Handlers
   // Spawn New Item from Chest (Paid: 50 Gold)

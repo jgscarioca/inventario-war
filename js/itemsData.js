@@ -6,8 +6,9 @@
 
 const ITEM_TYPES = {
   axe: {
-    category: 'weapon',
-    categoryName: 'Machado',
+    category: 'blade',
+    categoryName: 'Lâmina',
+    shopPrice: 40,
     tiers: [
       {
         level: 1,
@@ -148,8 +149,9 @@ const ITEM_TYPES = {
   },
 
   sword: {
-    category: 'weapon',
-    categoryName: 'Espada',
+    category: 'blade',
+    categoryName: 'Lâmina',
+    shopPrice: 35,
     tiers: [
       {
         level: 1,
@@ -235,8 +237,9 @@ const ITEM_TYPES = {
   },
 
   bow: {
-    category: 'weapon',
-    categoryName: 'Arco',
+    category: 'ranged',
+    categoryName: 'Longo Alcance',
+    shopPrice: 30,
     tiers: [
       {
         level: 1,
@@ -302,7 +305,8 @@ const ITEM_TYPES = {
 
   shield: {
     category: 'armor',
-    categoryName: 'Escudo',
+    categoryName: 'Armadura',
+    shopPrice: 30,
     tiers: [
       {
         level: 1,
@@ -355,9 +359,10 @@ const ITEM_TYPES = {
   },
 
   potion: {
-    category: 'support',
+    category: 'potion',
     categoryName: 'Poção',
-    buffPercent: 30, // Buffs adjacent weapons with +30% power
+    shopPrice: 25,
+    buffPercent: 30, // Buffs adjacent weapons with +30% power and heals hero
     tiers: [
       {
         level: 1,
@@ -419,9 +424,10 @@ const ITEM_TYPES = {
   },
 
   whetstone: {
-    category: 'support',
-    categoryName: 'Pedra de Amolar',
-    buffPercent: 40, // Buffs adjacent weapons with +40% power
+    category: 'accessory',
+    categoryName: 'Acessório',
+    shopPrice: 35,
+    buffPercent: 40, // Buffs adjacent weapons with +40% power and crit
     tiers: [
       {
         level: 1,
@@ -492,7 +498,8 @@ const ITEM_TYPES = {
 
   helmet: {
     category: 'armor',
-    categoryName: 'Elmo',
+    categoryName: 'Armadura',
+    shopPrice: 25,
     tiers: [
       {
         level: 1,
@@ -543,6 +550,97 @@ const ITEM_TYPES = {
         `
       }
     ]
+  },
+
+  spellbook: {
+    category: 'magic',
+    categoryName: 'Magia',
+    shopPrice: 45,
+    buffPercent: 25,
+    tiers: [
+      {
+        level: 1,
+        name: 'Grimoire das Chamas',
+        width: 1,
+        height: 1,
+        power: 80,
+        buffPercent: 25,
+        tier: 1,
+        desc: 'Magia Arcana: Concede +25% de Dano de Fogo a armas e lâminas adjacentes no grid!',
+        iconSvg: (w, h) => `
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="bookCover1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#b91c1c"/>
+                <stop offset="100%" stop-color="#450a0a"/>
+              </linearGradient>
+            </defs>
+            <rect x="14" y="10" width="36" height="44" rx="4" fill="url(#bookCover1)" stroke="#f59e0b" stroke-width="2.5"/>
+            <rect x="42" y="13" width="6" height="38" rx="1" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <polygon points="14,10 22,10 14,18" fill="#fde047"/>
+            <polygon points="14,54 22,54 14,46" fill="#fde047"/>
+            <path d="M28 38 C24 34 26 26 31 22 C32 26 35 27 34 30 C37 28 39 31 37 36 C35 39 30 40 28 38 Z" fill="#f97316" stroke="#fbbf24" stroke-width="1.5"/>
+            <circle cx="31" cy="33" r="2.5" fill="#fef08a"/>
+          </svg>
+        `
+      },
+      {
+        level: 2,
+        name: 'Tomo Arcano do Éter',
+        width: 1,
+        height: 2,
+        power: 240,
+        buffPercent: 50,
+        tier: 2,
+        desc: 'Magia de Fogo Rúnico: Infunde armas vizinhas com +50% de Dano Flamejante!',
+        iconSvg: (w, h) => `
+          <svg viewBox="0 0 64 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="tomeGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7e22ce"/>
+                <stop offset="100%" stop-color="#3b0764"/>
+              </linearGradient>
+            </defs>
+            <rect x="12" y="14" width="40" height="100" rx="6" fill="url(#tomeGrad2)" stroke="#c084fc" stroke-width="3"/>
+            <line x1="20" y1="14" x2="20" y2="114" stroke="#fde047" stroke-width="2"/>
+            <circle cx="32" cy="64" r="16" fill="#581c87" stroke="#38bdf8" stroke-width="2.5"/>
+            <polygon points="32,52 42,70 22,70" fill="none" stroke="#f0abfc" stroke-width="2"/>
+            <polygon points="32,76 42,58 22,58" fill="none" stroke="#f0abfc" stroke-width="2"/>
+            <circle cx="32" cy="64" r="4" fill="#f97316"/>
+            <circle cx="24" cy="36" r="2" fill="#fde047"/>
+            <circle cx="40" cy="92" r="2" fill="#fde047"/>
+          </svg>
+        `
+      },
+      {
+        level: 3,
+        name: 'Codex Cósmico dos Dragões',
+        width: 2,
+        height: 2,
+        power: 750,
+        buffPercent: 85,
+        tier: 3,
+        desc: 'Relíquia Suprema: Infunde armas conectadas com +85% de Dano de Fogo e poder solar!',
+        iconSvg: (w, h) => `
+          <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="codexGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#b91c1c"/>
+                <stop offset="50%" stop-color="#7c2d12"/>
+                <stop offset="100%" stop-color="#1e1b4b"/>
+              </linearGradient>
+            </defs>
+            <rect x="20" y="16" width="88" height="96" rx="8" fill="url(#codexGrad3)" stroke="#f59e0b" stroke-width="4"/>
+            <line x1="36" y1="16" x2="36" y2="112" stroke="#fde047" stroke-width="3"/>
+            <circle cx="70" cy="64" r="24" fill="#450a0a" stroke="#f97316" stroke-width="3"/>
+            <path d="M70 46 C60 52 58 66 68 76 C74 72 78 64 76 56 C82 60 84 68 80 74 C88 64 86 52 70 46 Z" fill="#f97316" stroke="#fde047" stroke-width="2"/>
+            <circle cx="70" cy="62" r="4" fill="#ffffff"/>
+            <polygon points="20,16 34,16 20,30" fill="#fde047"/>
+            <polygon points="20,112 34,112 20,98" fill="#fde047"/>
+          </svg>
+        `
+      }
+    ]
   }
 };
 
@@ -557,11 +655,12 @@ function createItem(typeKey, level = 1) {
   return {
     id: `item_${Date.now()}_${itemInstanceCounter++}`,
     type: typeKey,
-    category: typeDef.category || 'weapon',
+    category: typeDef.category || 'blade',
+    categoryName: typeDef.categoryName || 'Equipamento',
+    shopPrice: typeDef.shopPrice || 35,
     buffPercent: tierDef.buffPercent || typeDef.buffPercent || 0,
     level: tierDef.level,
     name: tierDef.name,
-    categoryName: typeDef.categoryName,
     width: tierDef.width,
     height: tierDef.height,
     originalWidth: tierDef.width,
@@ -574,6 +673,7 @@ function createItem(typeKey, level = 1) {
     adjacencyBonusPower: 0,
     buffedBy: [],
     buffingItems: [],
+    synergiesActive: [], // list of synergy badges e.g. { type: 'fire', icon: '🔥', label: '+25% Fogo' }
     // Grid coordinate (null if in stash or held)
     row: null,
     col: null

@@ -245,32 +245,38 @@ class BackpackGrid {
     return false;
   }
 
-  // Calculate and apply adjacency synergies between support items and weapons
+  // Calculate and apply adjacency synergies between classes
   updateAdjacencySynergies() {
     // 1. Reset synergy states
     this.items.forEach(it => {
       it.adjacencyBonusPower = 0;
       it.buffedBy = [];
       it.buffingItems = [];
+      it.synergiesActive = [];
     });
 
-    // 2. Identify support items and weapons
-    const supportItems = this.items.filter(it => it.category === 'support');
-    const weapons = this.items.filter(it => it.category === 'weapon');
+    const weapons = this.items.filter(it => it.category === 'blade' || it.category === 'ranged');
+    const magicItems = this.items.filter(it => it.category === 'magic');
+    const accessories = this.items.filter(it => it.category === 'accessory');
+    const potions = this.items.filter(it => it.category === 'potion');
+    const shields = this.items.filter(it => it.type === 'shield');
+    const helmets = this.items.filter(it => it.type === 'helmet');
 
-    // 3. Apply buff from support items to touching weapons
-    supportItems.forEach(sup => {
+    // 2. Spellbook (Magia): Infuses adjacent weapons with Fire Damage (+25% a +85%)
+    magicItems.forEach(mag => {
       weapons.forEach(wep => {
-        if (this.checkAdjacency(sup, wep)) {
-          const buffPct = sup.buffPercent || 30;
+        if (this.checkAdjacency(mag, wep)) {
+          const buffPct = mag.buffPercent || 25;
           const bonus = Math.round(wep.power * (buffPct / 100));
           wep.adjacencyBonusPower += bonus;
+          wep.synergiesActive.push({ type: 'fire', icon: '🔥', label: `+${bonus} Dano de Fogo` });
           wep.buffedBy.push({
-            name: sup.name,
+            name: mag.name,
             bonus: bonus,
-            percent: buffPct
+            icon: '🔥',
+            label: `+${buffPct}% Fogo Arcana`
           });
-          sup.buffingItems.push({
+          mag.buffingItems.push({
             name: wep.name,
             bonus: bonus
           });
@@ -278,25 +284,109 @@ class BackpackGrid {
       });
     });
 
-    // 4. Update DOM styling: visual glow, borders, and boosted stat tags
+    // 3. Whetstone (Acessório / Pedra de Amolar): Sharpens blades with high Critical DPS (+40% a +110%)
+    accessories.forEach(acc => {
+      weapons.forEach(wep => {
+        if (this.checkAdjacency(acc, wep)) {
+          const buffPct = acc.buffPercent || 40;
+          const bonus = Math.round(wep.power * (buffPct / 100));
+          wep.adjacencyBonusPower += bonus;
+          wep.synergiesActive.push({ type: 'sharp', icon: '⚡', label: `+${bonus} DPS Crítico` });
+          wep.buffedBy.push({
+            name: acc.name,
+            bonus: bonus,
+            icon: '⚡',
+            label: `+${buffPct}% Fio Navalha`
+          });
+          acc.buffingItems.push({
+            name: wep.name,
+            bonus: bonus
+          });
+        }
+      });
+    });
+
+    // 4. Potions: Alchemy infusion (+30% a +90%)
+    potions.forEach(pot => {
+      weapons.forEach(wep => {
+        if (this.checkAdjacency(pot, wep)) {
+          const buffPct = pot.buffPercent || 30;
+          const bonus = Math.round(wep.power * (buffPct / 100));
+          wep.adjacencyBonusPower += bonus;
+          wep.synergiesActive.push({ type: 'alchemy', icon: '🧪', label: `+${bonus} Alquimia` });
+          wep.buffedBy.push({
+            name: pot.name,
+            bonus: bonus,
+            icon: '🧪',
+            label: `+${buffPct}% Alquimia`
+          });
+          pot.buffingItems.push({
+            name: wep.name,
+            bonus: bonus
+          });
+        }
+      });
+    });
+
+    // 5. Armors (Shield + Helmet adjacency: Muralha de Aço)
+    shields.forEach(sh => {
+      helmets.forEach(helm => {
+        if (this.checkAdjacency(sh, helm)) {
+          const bonusSh = Math.round(sh.power * 0.25);
+          const bonusHelm = Math.round(helm.power * 0.25);
+          sh.adjacencyBonusPower += bonusSh;
+          helm.adjacencyBonusPower += bonusHelm;
+          sh.synergiesActive.push({ type: 'armor', icon: '🛡️', label: '+25% Muralha' });
+          helm.synergiesActive.push({ type: 'armor', icon: '🛡️', label: '+25% Muralha' });
+          sh.buffedBy.push({ name: helm.name, bonus: bonusSh, icon: '🛡️', label: '+25% Muralha' });
+          helm.buffedBy.push({ name: sh.name, bonus: bonusHelm, icon: '🛡️', label: '+25% Muralha' });
+        }
+      });
+    });
+
+    // 6. Update DOM styling: visual glow, borders, and boosted stat tags
     this.items.forEach(it => {
       const el = document.getElementById(`item-dom-${it.id}`);
       if (!el) return;
 
-      el.classList.remove('synergy-buffed', 'synergy-provider');
+      el.classList.remove(
+        'synergy-buffed',
+        'synergy-provider',
+        'synergy-fire',
+        'synergy-sharp',
+        'synergy-alchemy',
+        'synergy-armor'
+      );
 
       const statTag = el.querySelector('.item-stat-tag');
+
+      // Specific synergy glow classes
+      if (it.synergiesActive && it.synergiesActive.length > 0) {
+        it.synergiesActive.forEach(syn => {
+          el.classList.add(`synergy-${syn.type}`);
+        });
+      }
+
       if (it.adjacencyBonusPower > 0) {
         el.classList.add('synergy-buffed');
         if (statTag) {
-          statTag.innerHTML = `⚔️+${it.power + it.adjacencyBonusPower} <span class="synergy-tag-sup">(+${it.adjacencyBonusPower}⚡)</span>`;
+          const icon = it.synergiesActive?.[0]?.icon || '⚡';
+          statTag.innerHTML = `⚔️+${it.power + it.adjacencyBonusPower} <span class="synergy-tag-sup">(+${it.adjacencyBonusPower}${icon})</span>`;
         }
       } else {
         if (statTag) {
-          if (it.category === 'support') {
+          if (it.category === 'magic') {
+            statTag.innerHTML = (it.buffingItems && it.buffingItems.length > 0)
+              ? `🔥+${it.buffPercent}% (${it.buffingItems.length})`
+              : `🔮+${it.power}`;
+          } else if (it.category === 'accessory') {
             statTag.innerHTML = (it.buffingItems && it.buffingItems.length > 0)
               ? `⚡+${it.buffPercent}% (${it.buffingItems.length})`
-              : `🧪+${it.buffPercent}%`;
+              : `⚙️+${it.power}`;
+          } else if (it.category === 'potion') {
+            statTag.innerHTML = `🧪 Cura`;
+          } else if (it.category === 'armor') {
+            statTag.innerHTML = `🛡️+${it.power}`;
           } else {
             statTag.innerHTML = `⚔️+${it.power}`;
           }

@@ -65,15 +65,29 @@ class CombatArena {
   calculateHeroStats() {
     const items = window.backpackGrid?.items || [];
     let bonusHp = 0;
+    let maxShield = 0;
     items.forEach(it => {
-      if (it.type === 'shield') bonusHp += it.power * 1.5;
-      if (it.type === 'helmet') bonusHp += it.power * 1.0;
+      if (it.type === 'shield') {
+        bonusHp += it.power * 1.5;
+        maxShield += it.power * 0.8;
+      }
+      if (it.type === 'helmet') {
+        bonusHp += it.power * 1.0;
+        maxShield += it.power * 0.4;
+      }
+      if (it.synergiesActive?.some(s => s.type === 'armor')) {
+        maxShield += 60; // Muralha de Aço bonus shield
+      }
     });
 
     const newMaxHp = Math.round(this.hero.baseMaxHp + bonusHp);
     const ratio = this.hero.hp / this.hero.maxHp;
     this.hero.maxHp = newMaxHp;
     this.hero.hp = Math.min(Math.round(ratio * newMaxHp), newMaxHp);
+    this.hero.maxShieldHp = Math.round(maxShield);
+    if (this.hero.shieldHp === undefined || this.hero.shieldHp > this.hero.maxShieldHp) {
+      this.hero.shieldHp = this.hero.maxShieldHp;
+    }
   }
 
   initWave() {
@@ -222,6 +236,7 @@ class CombatArena {
       if (this.victoryTimer <= 0) {
         this.wave++;
         this.initWave();
+        window.shopManager?.onNewWave(this.wave);
       }
       return;
     }
@@ -251,16 +266,27 @@ class CombatArena {
       if (Math.abs(this.hero.recoilX) < 0.2) this.hero.recoilX = 0;
     }
 
-    // Potion passive regeneration
+    // Potion passive regeneration & active combat heal
     this.hero.regenTimer += dt;
     if (this.hero.regenTimer >= 2500) {
       this.hero.regenTimer = 0;
       const items = window.backpackGrid?.items || [];
-      const hasPotion = items.some(it => it.type === 'potion');
+      const hasPotion = items.some(it => it.type === 'potion' || it.category === 'potion');
       if (hasPotion && this.hero.hp < this.hero.maxHp) {
-        const healAmt = Math.round(this.hero.maxHp * 0.08);
+        const healAmt = Math.round(this.hero.maxHp * 0.09);
         this.hero.hp = Math.min(this.hero.hp + healAmt, this.hero.maxHp);
         this.showFloatingDamage(this.hero.x, this.hero.y - 15, `+${healAmt} HP`, false, '#22c55e');
+      }
+    }
+
+    // Shield passive recharge (Armors & Shields)
+    this.hero.shieldCooldown = (this.hero.shieldCooldown || 0) + dt;
+    if (this.hero.shieldCooldown >= 3500) {
+      this.hero.shieldCooldown = 0;
+      if (this.hero.maxShieldHp > 0 && this.hero.shieldHp < this.hero.maxShieldHp) {
+        const recharge = Math.round(this.hero.maxShieldHp * 0.3);
+        this.hero.shieldHp = Math.min(this.hero.shieldHp + recharge, this.hero.maxShieldHp);
+        this.showFloatingDamage(this.hero.x, this.hero.y - 25, `+${recharge} 🛡️`, false, '#38bdf8');
       }
     }
 
@@ -383,10 +409,15 @@ class CombatArena {
     const totalPower = window.backpackGrid?.calculateTotalPower() || 100;
     const intervalSec = this.heroAttackInterval / 1000;
 
+    const items = window.backpackGrid?.items || [];
+    const hasWhetstone = items.some(it => it.type === 'whetstone' || it.synergiesActive?.some(s => s.type === 'sharp'));
+    const hasFire = items.some(it => it.type === 'spellbook' || it.synergiesActive?.some(s => s.type === 'fire'));
+
     // Damage per hit matches DPS directly: baseDmg = DPS * interval
     const baseDmg = Math.round(totalPower * intervalSec);
-    const isCrit = Math.random() < 0.22;
-    const dmg = Math.round(baseDmg * (isCrit ? 2.0 : 1.0) * (0.92 + Math.random() * 0.16));
+    const critRate = hasWhetstone ? 0.44 : 0.22;
+    const isCrit = Math.random() < critRate;
+    const dmg = Math.round(baseDmg * (isCrit ? (hasWhetstone ? 2.2 : 1.9) : 1.0) * (0.92 + Math.random() * 0.16));
 
     target.hp -= dmg;
     target.hitFlash = 1;
@@ -397,11 +428,29 @@ class CombatArena {
     // Visual Slash sparks
     this.spawnSlashParticles(target.x, target.y);
 
+    // Spellbook Fire Burn Burst
+    if (hasFire) {
+      const burnDmg = Math.round(dmg * 0.22);
+      target.hp -= burnDmg;
+      this.showFloatingDamage(target.x + 10, target.y - 20, `🔥+${burnDmg}`, false, '#f97316');
+      for (let p = 0; p < 5; p++) {
+        this.particles.push({
+          x: target.x + (Math.random() - 0.5) * 20,
+          y: target.y + (Math.random() - 0.5) * 20,
+          vx: (Math.random() - 0.5) * 4,
+          vy: -Math.random() * 4 - 1,
+          color: p % 2 === 0 ? '#f97316' : '#fde047',
+          radius: 2 + Math.random() * 3,
+          life: 0.6
+        });
+      }
+    }
+
     // Floating damage numbers
     this.showFloatingDamage(target.x, target.y, dmg, isCrit);
   }
 
-  // Enemy counter-attacks Hero
+  // Enemy counter-attacks Hero (Absorbed by Shield first)
   executeEnemyAttack() {
     if (this.enemies.length === 0 || this.hero.hp <= 0) return;
 
@@ -416,16 +465,26 @@ class CombatArena {
     });
 
     const rawDmg = Math.round(18 + this.wave * 8 + (attacker.isBoss ? 45 : 0) + Math.random() * 10);
-    const finalDmg = Math.max(Math.round(rawDmg - defense * 0.15), 6);
+    let finalDmg = Math.max(Math.round(rawDmg - defense * 0.15), 6);
 
-    this.hero.hp -= finalDmg;
-    this.hero.hitFlash = 1;
-    this.hero.recoilX = -8;
-    this.screenShake = attacker.isBoss ? 6 : 2;
+    // Shield barrier absorption
+    if (this.hero.shieldHp > 0) {
+      const absorbed = Math.min(this.hero.shieldHp, finalDmg);
+      this.hero.shieldHp -= absorbed;
+      finalDmg -= absorbed;
+      if (absorbed > 0) {
+        this.showFloatingDamage(this.hero.x, this.hero.y - 32, `🛡️ -${absorbed} Absorvido`, false, '#38bdf8');
+      }
+    }
 
-    window.sound?.playHurt();
-
-    this.showFloatingDamage(this.hero.x, this.hero.y - 20, `-${finalDmg}`, false, '#f87171');
+    if (finalDmg > 0) {
+      this.hero.hp -= finalDmg;
+      this.hero.hitFlash = 1;
+      this.hero.recoilX = -8;
+      this.screenShake = attacker.isBoss ? 6 : 2;
+      window.sound?.playHurt();
+      this.showFloatingDamage(this.hero.x, this.hero.y - 20, `-${finalDmg}`, false, '#f87171');
+    }
 
     // Emergency Revitalize if Hero falls
     if (this.hero.hp <= 0) {
@@ -755,11 +814,19 @@ class CombatArena {
     ctx.fillStyle = hpColor;
     ctx.fillRect(-barW / 2 + 1, -35, Math.max((barW - 2) * hpRatio, 0), barH - 2);
 
-    // HP Text
+    // Shield Bar Overlay (if hero has active shield from armors)
+    if (h.shieldHp > 0 && h.maxShieldHp > 0) {
+      const shieldRatio = Math.min(h.shieldHp / h.maxShieldHp, 1);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
+      ctx.fillRect(-barW / 2 + 1, -35, Math.max((barW - 2) * shieldRatio, 0), barH - 2);
+    }
+
+    // HP & Shield Text
     ctx.font = 'bold 8px "Outfit", sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
-    ctx.fillText(`HP ${h.hp}/${h.maxHp}`, 0, -40);
+    const shieldStr = (h.shieldHp > 0) ? ` (+${h.shieldHp}🛡️)` : '';
+    ctx.fillText(`HP ${h.hp}/${h.maxHp}${shieldStr}`, 0, -40);
 
     // 2. HERO MERGE RADIANT AURA
     if (this.heroMergeGlow > 0) {
