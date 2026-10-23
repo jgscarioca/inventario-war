@@ -221,12 +221,15 @@ class ShopManager {
         card.innerHTML = `
           <div class="shop-card-header">
             <span class="shop-card-category cat-${item.category}">${catLabel}</span>
-            <button class="btn-freeze-card ${offer.isFrozen ? 'frozen-active' : ''}" title="${offer.isFrozen ? 'Descongelar item' : 'Congelar item para a próxima rodada'}">
-              ${offer.isFrozen ? '❄️ Preso' : '❄️'}
-            </button>
+            <div class="shop-header-actions">
+              <button class="btn-inspect-shop" title="Inspecionar detalhes, atributos e linha de fusão da arma">🔍</button>
+              <button class="btn-freeze-card ${offer.isFrozen ? 'frozen-active' : ''}" title="${offer.isFrozen ? 'Descongelar item' : 'Congelar item para a próxima rodada'}">
+                ${offer.isFrozen ? '❄️ Preso' : '❄️'}
+              </button>
+            </div>
           </div>
 
-          <div class="shop-card-icon-wrap tier-${item.tier}">
+          <div class="shop-card-icon-wrap tier-${item.tier}" title="Clique para inspecionar arma">
             ${item.svgString}
             <span class="shop-card-lvl">Nv.${item.level}</span>
           </div>
@@ -243,6 +246,18 @@ class ShopManager {
         `;
 
         // Event listeners
+        const inspectBtn = card.querySelector('.btn-inspect-shop');
+        inspectBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.dragDropController?.openWeaponInspector(item);
+        });
+
+        const iconWrap = card.querySelector('.shop-card-icon-wrap');
+        iconWrap?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.dragDropController?.openWeaponInspector(item);
+        });
+
         const freezeBtn = card.querySelector('.btn-freeze-card');
         freezeBtn?.addEventListener('click', (e) => {
           e.stopPropagation();

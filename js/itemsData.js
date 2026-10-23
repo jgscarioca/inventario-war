@@ -686,3 +686,82 @@ function getNextTier(typeKey, currentLevel) {
   if (!typeDef) return null;
   return typeDef.tiers.find(t => t.level === currentLevel + 1) || null;
 }
+
+// Return the complete 4-tier evolution line for visual roadmap
+function getItemEvolutionChain(typeKey) {
+  const typeDef = ITEM_TYPES[typeKey];
+  if (!typeDef || !typeDef.tiers) return [];
+  return typeDef.tiers.map(t => ({
+    level: t.level,
+    tier: t.tier,
+    name: t.name,
+    width: t.width,
+    height: t.height,
+    power: t.power,
+    desc: t.desc,
+    svgString: t.iconSvg(t.width, t.height),
+    buffPercent: t.buffPercent || 0
+  }));
+}
+
+// Return tactical synergy tips for the weapon inspector
+function getItemSynergyGuide(item) {
+  const cat = item.category;
+  const guides = [];
+
+  if (cat === 'blade') {
+    guides.push({
+      icon: '🔥',
+      title: 'Infusão de Fogo',
+      desc: 'Coloque ao lado de <strong>Grimórios</strong> para imbuir esta lâmina com chamas (+35% a +85% de poder).'
+    });
+    guides.push({
+      icon: '⚡',
+      title: 'Pedra Amoladora',
+      desc: 'Adjacente a <strong>Pedras Amoladoras</strong> concede +40% de dano crítico extra por golpe.'
+    });
+    guides.push({
+      icon: '🧪',
+      title: 'Alquimia Ativa',
+      desc: 'Poções de cura vizinhas concedem +30% a +90% de reforço químico aos cortes.'
+    });
+  } else if (cat === 'magic') {
+    guides.push({
+      icon: '🔥',
+      title: 'Provedor de Chamas',
+      desc: 'Irradia dano de fogo solar para <strong>todas as armas</strong> diretamente tocando neste tomo!'
+    });
+    guides.push({
+      icon: '🔮',
+      title: 'Posicionamento Ideal',
+      desc: 'Coloque este livro no centro de 2 ou 3 armas para multiplicar o bônus simultaneamente.'
+    });
+  } else if (cat === 'accessory') {
+    guides.push({
+      icon: '⚡',
+      title: 'Amolador Tático',
+      desc: 'Afia o gume de todas as lâminas e machados vizinhos (+40% de bônus direto).'
+    });
+  } else if (cat === 'armor') {
+    guides.push({
+      icon: '🛡️',
+      title: 'Sinergia Muralha de Aço',
+      desc: 'Posicione Escudos ao lado de Elmos para ativar +25% de proteção e barreira sólida.'
+    });
+  } else if (cat === 'potion') {
+    guides.push({
+      icon: '🧪',
+      title: 'Elixir de Suporte',
+      desc: 'Restaura vitalidade e infunde todas as armas vizinhas com reforço alquímico.'
+    });
+  } else if (cat === 'ranged') {
+    guides.push({
+      icon: '🎯',
+      title: 'Tiro de Precisão',
+      desc: 'Arma de longo alcance. Se beneficia grandemente de Pedras Amoladoras e Poções.'
+    });
+  }
+
+  return guides;
+}
+

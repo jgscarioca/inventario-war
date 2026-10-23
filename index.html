@@ -212,34 +212,145 @@
       </section>
     </main>
 
-    <!-- Floating Item Detail Tooltip -->
+    <!-- Floating Modern Item Detail Tooltip -->
     <div id="item-tooltip" class="item-tooltip hidden">
+      <div class="tooltip-rarity-accent" id="tooltip-rarity-accent"></div>
       <div class="tooltip-header">
-        <span id="tooltip-icon" class="tooltip-icon"></span>
+        <div id="tooltip-icon" class="tooltip-icon"></div>
         <div class="tooltip-names">
           <div id="tooltip-title" class="tooltip-title">Machado de Guerra</div>
-          <div id="tooltip-tier" class="tooltip-tier">Raro • Nível 2</div>
+          <div class="tooltip-badge-row">
+            <span id="tooltip-cat-badge" class="tooltip-badge">⚔️ LÂMINA</span>
+            <span id="tooltip-tier" class="tooltip-badge-tier">Raro • Nível 2</span>
+          </div>
         </div>
       </div>
       <div class="tooltip-body">
         <div class="tooltip-stat-row">
-          <span>⚔️ Dano / Poder:</span>
-          <strong id="tooltip-power">+45</strong>
+          <span>⚔️ Poder / DPS:</span>
+          <strong id="tooltip-power" class="stat-power-glow">+360</strong>
         </div>
         <div class="tooltip-stat-row hidden" id="tooltip-synergy-row">
           <span id="tooltip-synergy-label">⚡ Bônus Adjacência:</span>
           <strong id="tooltip-synergy-val" class="highlight-synergy">+0 DPS</strong>
         </div>
         <div class="tooltip-stat-row">
-          <span>📐 Dimensão:</span>
+          <span>📐 Formato no Grid:</span>
           <strong id="tooltip-size">1x2 células</strong>
         </div>
         <div class="tooltip-stat-row">
-          <span>⚡ Próxima Fusão:</span>
-          <strong id="tooltip-bonus" class="highlight-text">+100% de Atributo</strong>
+          <span>🧬 Fusão:</span>
+          <strong id="tooltip-bonus" class="highlight-text">+100% Atributos</strong>
         </div>
         <div class="tooltip-desc" id="tooltip-desc">
           Combine com outro item idêntico Nv.2 para forjar o nível 3!
+        </div>
+        <div class="tooltip-tip-hint">
+          <span class="hint-key">Clique</span> para abrir a ficha completa da arma
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Moderno de Inspeção Tática de Arma / Equipamento -->
+    <div id="weapon-inspector-modal" class="modal-backdrop hidden" aria-hidden="true">
+      <div class="weapon-inspector-card" id="inspector-card-container">
+        <!-- Rarity Top Ribbon -->
+        <div class="inspector-rarity-ribbon" id="inspector-rarity-ribbon">
+          <span class="ribbon-sparkle">✦</span>
+          <span id="inspector-rarity-text">ARTEFATO RARO • NÍVEL 2</span>
+          <span class="ribbon-sparkle">✦</span>
+          <button id="btn-close-inspector" class="inspector-close-btn" aria-label="Fechar" title="Fechar inspeção">&times;</button>
+        </div>
+
+        <!-- Hero Showcase: Holographic Glow, 3D Art & Element Tags -->
+        <div class="inspector-hero" id="inspector-hero">
+          <div class="inspector-glow-aura" id="inspector-glow-aura"></div>
+          <div class="inspector-particles-layer">
+            <span class="sparkle-particle sp1">✨</span>
+            <span class="sparkle-particle sp2">⚡</span>
+            <span class="sparkle-particle sp3">🔥</span>
+          </div>
+          <div class="inspector-icon-showcase" id="inspector-icon-showcase">
+            <!-- Weapon SVG -->
+          </div>
+          <div class="inspector-badges-row" id="inspector-badges-row">
+            <!-- Dynamic Badges -->
+          </div>
+        </div>
+
+        <!-- Inspector Content Body -->
+        <div class="inspector-body">
+          <div class="inspector-title-row">
+            <div class="title-col">
+              <h2 id="inspector-name" class="inspector-name">Machado de Guerra</h2>
+              <span id="inspector-category-pill" class="inspector-cat-pill">⚔️ LÂMINA CORTE</span>
+            </div>
+            <div class="size-col">
+              <div class="mini-grid-container" id="inspector-mini-grid" title="Espaço ocupado no grid">
+                <!-- Mini grid shape dynamically rendered -->
+              </div>
+            </div>
+          </div>
+
+          <p id="inspector-lore" class="inspector-lore">Lâmina dupla de aço polido forjada com empunhadura longa de combate.</p>
+
+          <!-- Core Stat Meters -->
+          <div class="inspector-stats-grid">
+            <div class="inspector-stat-card power-stat">
+              <div class="stat-card-label">⚔️ PODER BASE</div>
+              <div class="stat-card-value" id="inspector-power-val">360</div>
+              <div class="stat-progress-bar">
+                <div class="stat-progress-fill" id="inspector-power-bar" style="width: 50%;"></div>
+              </div>
+            </div>
+
+            <div class="inspector-stat-card synergy-stat">
+              <div class="stat-card-label">⚡ BÔNUS ADJACÊNCIA</div>
+              <div class="stat-card-value highlight-synergy" id="inspector-synergy-val">+0 DPS</div>
+              <div class="stat-sub-text" id="inspector-synergy-source">Sem vizinhos ativos</div>
+            </div>
+
+            <div class="inspector-stat-card total-stat">
+              <div class="stat-card-label">💥 DPS TOTAL</div>
+              <div class="stat-card-value dps-highlight" id="inspector-total-dps">360 DPS</div>
+              <div class="stat-sub-text" id="inspector-dps-sub">Dano em combate</div>
+            </div>
+          </div>
+
+          <!-- Sinergias Recomendadas & Vizinhos -->
+          <div class="inspector-section">
+            <div class="section-title">
+              <span class="section-icon">✨</span>
+              <span>SINERGIAS & ADJACÊNCIA TÁTICA</span>
+            </div>
+            <div class="synergy-tips-box" id="inspector-synergy-tips">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Linha de Evolução Completa (4 Tiers) -->
+          <div class="inspector-section">
+            <div class="section-title">
+              <span class="section-icon">🧬</span>
+              <span>LINHA DE EVOLUÇÃO (MERGE TREE)</span>
+            </div>
+            <div class="evolution-track" id="inspector-evolution-track">
+              <!-- Dynamically populated 4 tiers with roadmap -->
+            </div>
+            <div class="next-merge-preview-box" id="inspector-next-merge-box">
+              <!-- Next level teaser -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="inspector-footer">
+          <button id="btn-inspector-rotate" class="btn-inspector-action btn-rotate-action" title="Girar item 90 graus">
+            <span>🔄 Girar (R)</span>
+          </button>
+          <button id="btn-inspector-close-main" class="btn-inspector-action btn-close-action">
+            <span>Entendido / Fechar</span>
+          </button>
         </div>
       </div>
     </div>
